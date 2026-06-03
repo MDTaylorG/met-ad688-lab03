@@ -1,7 +1,9 @@
 ---
 title: "Spark SQL Job Data Analysis"
 author: "Maria Taylor"
-format: html
+format:
+  html: default
+  docx: default 
 embed-resources: true
 date: "2026-06-02"
 date-format: long

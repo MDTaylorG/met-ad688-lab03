@@ -1,0 +1,101 @@
+---
+title: "Spark SQL Job Data Analysis"
+author: "Maria Taylor"
+format: html
+embed-resources: true
+date: "2026-06-02"
+date-format: long
+execute:
+  echo: true
+---
+
+```{python}
+from pyspark.sql import SparkSession
+
+# Start a Spark session
+spark = SparkSession.builder.appName("JobPostingsAnalysis").getOrCreate()
+
+# Load the CSV file into a Spark DataFrame
+df = spark.read.option("header", "true").option("inferSchema", "true").option("multiLine", "true").option("escape", "\"").csv("./data/lightcast_job_postings.csv")
+
+# Register the DataFrame as a temporary SQL table
+df.createOrReplaceTempView("jobs")
+
+# Display the first five rows
+df.show(5)
+
+# Show the schema
+df.printSchema()
+```
+## Query 1: Total Job Postings
+
+```{python}
+total = spark.sql("SELECT COUNT(*) AS total_jobs FROM jobs")
+total.show()
+```
+
+## Query 2: Top 5 Most Common Job Titles
+
+```{python}
+top_titles = spark.sql("""
+    SELECT TITLE_NAME, COUNT(*) AS job_count
+    FROM jobs
+    GROUP BY TITLE_NAME
+    ORDER BY job_count DESC
+    LIMIT 5
+""")
+top_titles.show()
+```
+
+## Query 3: Average Salary by Employment Type
+
+```{python}
+avg_salary = spark.sql("""
+    SELECT EMPLOYMENT_TYPE_NAME, AVG(SALARY) AS avg_salary
+    FROM jobs
+    GROUP BY EMPLOYMENT_TYPE_NAME
+    ORDER BY avg_salary DESC
+""")
+avg_salary.show()
+```
+
+## Query 4: Top 5 States with Most Job Postings
+
+```{python}
+top_states = spark.sql("""
+    SELECT STATE_NAME, COUNT(*) AS job_count
+    FROM jobs
+    GROUP BY STATE_NAME
+    ORDER BY job_count DESC
+    LIMIT 5
+""")
+top_states.show()
+```
+
+## Query 5: Salary Range for Each Job Title in California
+
+```{python}
+ca_salary = spark.sql("""
+    SELECT TITLE_NAME, MAX(SALARY) - MIN(SALARY) AS salary_range
+    FROM jobs
+    WHERE STATE_NAME = 'California'
+    GROUP BY TITLE_NAME
+    ORDER BY salary_range DESC
+    LIMIT 10
+""")
+ca_salary.show()
+```
+
+## Query 6: Top 5 Industries with Highest Average Salaries
+
+```{python}
+top_industries = spark.sql("""
+    SELECT NAICS2_NAME, AVG(SALARY) AS avg_salary, COUNT(*) AS job_count
+    FROM jobs
+    GROUP BY NAICS2_NAME
+    HAVING COUNT(*) > 100
+    ORDER BY avg_salary DESC
+    LIMIT 5
+""")
+top_industries.show()
+```
